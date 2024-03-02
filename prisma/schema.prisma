@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  MANAGER
+  SUSPENDED
+}
+
+model Account {
+  id                String  @id @default(cuid()) @map("_id")
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid()) @map("_id")
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String      @id @default(cuid()) @map("_id")
+  userName      String      @unique @default(cuid())
+  name          String?
+  image         String?
+  email         String?     @unique
+  emailVerified DateTime?
+  date          DateTime    @default(now())
+  role          UserRole    @default(USER)
+  bio           String?
+  links         String?
+  following     Follows[]   @relation("UserFollowing")
+  followers     Follows[]   @relation("UserFollowers")
+  accounts      Account[]
+  sessions      Session[]
+  todo          Todo[]
+  posts         Post[]
+  savedPosts    SavedPost[]
+  comments      Comment[]
+  likes         Like[]
+}
+
+model Follows {
+  id          String @id @default(cuid()) @map("_id")
+  follower    User   @relation("UserFollowing", fields: [followerId], references: [userName])
+  followerId  String
+  following   User   @relation("UserFollowers", fields: [followingId], references: [userName])
+  followingId String
+}
+
+model VerificationToken {
+  identifier String   @id @default(cuid()) @map("_id")
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// AUTH SCHEMA COMPLETED
+
+model Todo {
+  id          String   @id @default(cuid()) @map("_id")
+  title       String?
+  description String?
+  createdAt   DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [userName])
+}
+
+model Post {
+  id          String      @id @default(cuid()) @map("_id")
+  title       String?
+  description String?
+  createdAt   DateTime    @default(now())
+  user        User        @relation(fields: [userId], references: [userName])
+  userId      String
+  comments    Comment[]
+  likes       Like[]
+  savedPost   SavedPost[]
+}
+
+model Like {
+  id     String @id @default(cuid()) @map("_id")
+  user   User   @relation(fields: [userId], references: [userName])
+  userId String
+  postId String
+  post   Post   @relation(fields: [postId], references: [id])
+}
+
+model Comment {
+  id        String   @id @default(cuid()) @map("_id")
+  content   String
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+}
+
+model SavedPost {
+  id     String @id @default(cuid()) @map("_id")
+  user   User   @relation(fields: [userId], references: [userName])
+  userId String
+  postId String
+  post   Post   @relation(fields: [postId], references: [id])
+}
