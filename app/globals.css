@@ -16,6 +16,12 @@ body {
   color: #2b2b2b;
 }
 
+#input::placeholder {
+  background-color: #161616;
+  color: #ffffffa8;
+  border: none;
+}
+
 ::-webkit-scrollbar {
   background-color: #121212;
   width: 2px;
